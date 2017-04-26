@@ -8,6 +8,12 @@
 
 import UIKit
 
+public extension TweakStore {
+  func resetAll() {
+    self.reset()
+  }
+}
+
 /// Looks up the persisted state for tweaks.
 public final class TweakStore {
 
