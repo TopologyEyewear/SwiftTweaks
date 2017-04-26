@@ -19,7 +19,7 @@ import UIKit
 	}
 
 	/// The amount of time you need to shake your device to bring up the Tweaks UI
-	private static let shakeWindowTimeInterval: Double = 0.4
+	private static let shakeWindowTimeInterval: Double = 1.25
 
 	/// The GestureType used to determine when to present the UI.
 	private let gestureType: GestureType
