@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import UIKit
+
 
 /// A shortcut to create UIEdgeInsets using Tweaks.
 public struct EdgeInsetsTweakTemplate: TweakGroupTemplateType {
@@ -22,7 +24,7 @@ public struct EdgeInsetsTweakTemplate: TweakGroupTemplateType {
 		return [top, left, bottom, right].map(AnyTweak.init)
 	}
 
-	private static let edgeInsetDefaultParameters = SignedNumberTweakDefaultParameters<CGFloat>(defaultValue: 0, minValue: 0, maxValue: nil, stepSize: 1.0)
+	private static let edgeInsetDefaultParameters = ComparableTweakDefaultParameters<CGFloat>(defaultValue: 0, minValue: 0, maxValue: nil, stepSize: 1.0)
 
 	public init(
 		_ collectionName: String,

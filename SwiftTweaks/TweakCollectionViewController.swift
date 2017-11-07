@@ -45,6 +45,10 @@ internal final class TweakCollectionViewController: UIViewController {
 	    fatalError("init(coder:) has not been implemented")
 	}
 
+	deinit {
+		NotificationCenter.default.removeObserver(self)
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
@@ -55,6 +59,11 @@ internal final class TweakCollectionViewController: UIViewController {
 		tableView.register(TweakTableCell.self, forCellReuseIdentifier: TweakCollectionViewController.TweakTableViewCellIdentifer)
 		tableView.register(TweakGroupSectionHeader.self, forHeaderFooterViewReuseIdentifier: TweakGroupSectionHeader.identifier)
 		view.addSubview(tableView)
+
+		let keyboardTriggers: [Notification.Name] = [.UIKeyboardWillShow, .UIKeyboardWillHide]
+		keyboardTriggers.forEach { notificationName in
+			NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: .main, using: handleKeyboardVisibilityChange(_:))
+		}
 	}
 
 	override func viewWillAppear(_ animated: Bool) {
@@ -67,10 +76,38 @@ internal final class TweakCollectionViewController: UIViewController {
 
 	// MARK: Events
 
+	@objc private func handleKeyboardVisibilityChange(_ notification: Notification) {
+		if
+			let userInfo = notification.userInfo,
+			let keyboardSize = userInfo[UIKeyboardFrameEndUserInfoKey] as? CGRect,
+			let animationDuration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? NSNumber
+		{
+			UIView.animate(
+				withDuration: animationDuration.doubleValue,
+				animations: {
+					self.tableView.contentInset.bottom = keyboardSize.height
+			})
+		}
+	}
+
 	@objc private func dismissButtonTapped() {
 		delegate.tweakCollectionViewControllerDidPressDismissButton(self)
 	}
 
+	private func update(stringListTweak tweak: AnyTweak, to toValue: StringOption) {
+		let tweakDefault: StringOption
+		let tweakOptions: [StringOption]
+		switch self.tweakStore.currentViewDataForTweak(tweak) {
+		case let .stringList(value: _, defaultValue: defaultValue, options: options):
+			tweakDefault = defaultValue
+			tweakOptions = options
+		default:
+			fatalError("Can't update non-string-list tweak here.")
+		}
+		let newViewData = TweakViewData.stringList(value: toValue, defaultValue: tweakDefault, options: tweakOptions)
+		self.tweakStore.setValue(newViewData, forTweak: tweak)
+		self.tableView.reloadData()
+	}
 
 	// MARK: Table Cells
 
@@ -85,6 +122,9 @@ extension TweakCollectionViewController: UITableViewDelegate {
 		case .uiColor:
 			let colorEditVC = TweakColorEditViewController(anyTweak: tweak, tweakStore: tweakStore, delegate: self)
 			navigationController?.pushViewController(colorEditVC, animated: true)
+		case .stringList:
+			let stringOptionVC = StringOptionViewController(anyTweak: tweak, tweakStore: self.tweakStore, delegate: self)
+			self.navigationController?.pushViewController(stringOptionVC, animated: true)
 		case .boolean, .integer, .cgFloat, .double:
 			break
 		}
@@ -146,6 +186,12 @@ extension TweakCollectionViewController: TweakTableCellDelegate {
 
 extension TweakCollectionViewController: TweakColorEditViewControllerDelegate {
 	func tweakColorEditViewControllerDidPressDismissButton(_ tweakColorEditViewController: TweakColorEditViewController) {
+		self.delegate.tweakCollectionViewControllerDidPressDismissButton(self)
+	}
+}
+
+extension TweakCollectionViewController: StringOptionViewControllerDelegate {
+	func stringOptionViewControllerDidPressDismissButton(_ tweakSelectionViewController: StringOptionViewController) {
 		self.delegate.tweakCollectionViewControllerDidPressDismissButton(self)
 	}
 }
