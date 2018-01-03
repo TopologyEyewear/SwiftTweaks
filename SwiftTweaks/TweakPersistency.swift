@@ -32,7 +32,7 @@ internal final class TweakPersistency {
 		return persistedValueForTweakIdentifiable(AnyTweak(tweak: tweak)) as? T
 	}
 
-	internal func currentValueForTweak<T>(_ tweak: Tweak<T>) -> T? where T: SignedNumber {
+	internal func currentValueForTweak<T>(_ tweak: Tweak<T>) -> T? where T: Comparable {
 		if let currentValue = persistedValueForTweakIdentifiable(AnyTweak(tweak: tweak)) as? T {
 				// If the tweak can be clipped, then we'll need to clip it - because
 				// the tweak might've been persisted without a min / max, but then you changed the tweak definition.
@@ -113,7 +113,8 @@ private final class TweakDiskPersistency {
 	/// TweakCache a flat dictionary: [String: TweakableType]. 
 	/// However, because re-hydrating TweakableType from its underlying NSNumber gets Bool & Int mixed up, we have to persist a different structure on disk: [TweakViewDataType: [String: AnyObject]]
 	/// This ensures that if something was saved as a Bool, it's read back as a Bool.
-	@objc private final class Data: NSObject, NSCoding {
+	// NOTE (bryanjclark): The long string here is to preserve backwards-compatibility with pre-Swift4 SwiftTweaks archives.
+	@objc(_TtCC11SwiftTweaksP33_9992646B9FE5A082B6B2A55DA4E653F420TweakDiskPersistency4Data) private final class Data: NSObject, NSCoding {
 		let cache: TweakCache
 
 		init(cache: TweakCache) {
@@ -171,6 +172,11 @@ private final class TweakDiskPersistency {
 			case .cgFloat: return anyObject as? CGFloat
 			case .double: return anyObject as? Double
 			case .uiColor: return anyObject as? UIColor
+			case .stringList:
+				guard let stringOptionString = anyObject as? String else {
+					return nil
+				}
+				return StringOption(value: stringOptionString)
 			}
 		}
 	}
@@ -185,6 +191,7 @@ private extension TweakViewDataType {
 		case .cgFloat: return "cgfloat"
 		case .double: return "double"
 		case .uiColor: return "uicolor"
+		case .stringList: return "stringlist"
 		}
 	}
 }
@@ -198,6 +205,7 @@ private extension TweakableType {
 			case .cgFloat: return self as! CGFloat as AnyObject
 			case .double: return self as! Double as AnyObject
 			case .uiColor: return self as! UIColor
+			case .stringList: return (self as! StringOption).value as AnyObject
 		}
 	}
 }

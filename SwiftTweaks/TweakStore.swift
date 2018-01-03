@@ -76,7 +76,7 @@ public final class TweakStore {
 		return self.currentValueForTweak(tweak)
 	}
 
-	public func bind<T: TweakableType>(_ tweak: Tweak<T>, binding: @escaping (T) -> Void) -> TweakBindingIdentifier {
+	public func bind<T>(_ tweak: Tweak<T>, binding: @escaping (T) -> Void) -> TweakBindingIdentifier {
 		// Create the TweakBinding<T>, and wrap it in our type-erasing AnyTweakBinding
 		let tweakBinding = TweakBinding(tweak: tweak, binding: binding)
 		let anyTweakBinding = AnyTweakBinding(tweakBinding: tweakBinding)
@@ -159,6 +159,9 @@ public final class TweakStore {
 		case let .color(defaultValue: defaultValue):
 			let currentValue = cachedValue as? UIColor ?? defaultValue
 			return .color(value: currentValue, defaultValue: defaultValue)
+		case let .stringList(defaultValue: defaultValue, options: options):
+			let currentValue = cachedValue as? StringOption ?? defaultValue
+			return .stringList(value: currentValue, defaultValue: defaultValue, options: options)
 		}
 	}
 

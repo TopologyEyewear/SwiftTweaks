@@ -12,17 +12,18 @@ import UIKit
 
 /// Tweaks let you adjust things on the fly.
 /// Because each T needs a UI component, we have to restrict what T can be - hence T: TweakableType.
-/// If T: SignedNumberType, you can declare a min / max / stepSize for a Tweak.
+/// If T: Comparable, you can declare a min / max / stepSize for a Tweak.
 public struct Tweak<T: TweakableType> {
 	public let collectionName: String
 	public let groupName: String
 	public let tweakName: String
 	internal let defaultValue: T
-	internal let minimumValue: T?	// Only supported for T: SignedNumberType
-	internal let maximumValue: T?	// Only supported for T: SignedNumberType
-	internal let stepSize: T?		// Only supported for T: SignedNumberType
+	internal let minimumValue: T?	// Only supported for T: Comparable
+	internal let maximumValue: T?	// Only supported for T: Comparable
+	internal let stepSize: T?		// Only supported for T: Comparable
+	internal let options: [T]?		// Only supported for T: StringOption
 
-	internal init(collectionName: String, groupName: String, tweakName: String, defaultValue: T, minimumValue: T? = nil, maximumValue: T? = nil, stepSize: T? = nil) {
+	internal init(collectionName: String, groupName: String, tweakName: String, defaultValue: T, minimumValue: T? = nil, maximumValue: T? = nil, stepSize: T? = nil, options: [T]? = nil) {
 
 		[collectionName, groupName, tweakName].forEach {
 			if $0.contains(TweakIdentifierSeparator) {
@@ -37,6 +38,7 @@ public struct Tweak<T: TweakableType> {
 		self.minimumValue = minimumValue
 		self.maximumValue = maximumValue
 		self.stepSize = stepSize
+		self.options = options
 	}
 }
 
@@ -51,10 +53,11 @@ extension Tweak {
 			defaultValue: defaultValue
 		)
 	}
+
 }
 
-extension Tweak where T: SignedNumber {
-	/// Creates a Tweak<T> where T: SignedNumberType
+extension Tweak where T: Comparable {
+	/// Creates a Tweak<T> where T: Comparable
 	/// You can optionally provide a min / max / stepSize to restrict the bounds and behavior of a tweak.
 	/// The step size is "how much does the value change when I tap the UIStepper"
 	public init(_ collectionName: String, _ groupName: String, _ tweakName: String, defaultValue: T, min minimumValue: T? = nil, max maximumValue: T? = nil, stepSize: T? = nil) {
@@ -72,6 +75,25 @@ extension Tweak where T: SignedNumber {
 			minimumValue: minimumValue,
 			maximumValue: maximumValue,
 			stepSize: stepSize
+		)
+	}
+}
+
+extension Tweak {
+	// This can't be an initializer because generic types apparently can't handle fixed-type initializers
+	public static func stringList(_ collectionName: String, _ groupName: String, _ tweakName: String, options: [String], defaultValue: String?=nil) -> Tweak<StringOption> {
+		precondition(!options.isEmpty, "Options list cannot be empty (stringList tweak \"\(tweakName)\")")
+		precondition(
+			defaultValue == nil || (defaultValue != nil && options.index(of: defaultValue!) != nil),
+			"The default value \"\(String(describing: defaultValue))\" of the stringList tweak \"\(tweakName)\" must be in the list of options \"\(options)\""
+		)
+
+		return Tweak<StringOption>(
+			collectionName: collectionName,
+			groupName: groupName,
+			tweakName: tweakName,
+			defaultValue: StringOption(value: defaultValue ?? options[0]),
+			options: options.map(StringOption.init)
 		)
 	}
 }
@@ -108,6 +130,11 @@ extension Tweak: TweakType {
 			)
 		case .uiColor:
 			return .color(defaultValue: defaultValue as! UIColor)
+		case .stringList:
+			return .stringList(
+				defaultValue: defaultValue as! StringOption,
+				options: options!.map { $0 as! StringOption }
+			)
 		}
 	}
 
