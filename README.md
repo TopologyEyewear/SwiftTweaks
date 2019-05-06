@@ -1,5 +1,16 @@
 # SwiftTweaks
 
+## Topology custom changes
+
+We've made some on top of the original repository. If we fetch from an upstream version of the original repository in the future we should make sure that these changes are ported/merged successfully:
+
+- `TweakStore.swift` adds a method `resetAll` for resetting all tweaks on app update.
+- `TweakWindow.swift` increases the value of the `shakeWindowTimeInterval` from 0.4 to 1.25.
+
+These changes are very easy to port, but should nonetheless be contemplated.
+
+---------
+
 _Adjust your iOS app on the fly without waiting to re-compile!_
 
 ![SwiftTweaks Icon](https://github.com/Khan/SwiftTweaks/blob/master/Images/SwiftTweaks_README_icon.png?raw=true)
