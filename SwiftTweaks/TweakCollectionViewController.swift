@@ -26,6 +26,8 @@ internal final class TweakCollectionViewController: UIViewController {
 		return tableView
 	}()
 
+	fileprivate let hapticsPlayer = HapticsPlayer()
+
 	init(tweakCollection: TweakCollection, tweakStore: TweakStore, delegate: TweakCollectionViewControllerDelegate) {
 		self.tweakCollection = tweakCollection
 		self.tweakStore = tweakStore
@@ -60,7 +62,7 @@ internal final class TweakCollectionViewController: UIViewController {
 		tableView.register(TweakGroupSectionHeader.self, forHeaderFooterViewReuseIdentifier: TweakGroupSectionHeader.identifier)
 		view.addSubview(tableView)
 
-		let keyboardTriggers: [Notification.Name] = [.UIKeyboardWillShow, .UIKeyboardWillHide]
+		let keyboardTriggers: [Notification.Name] = [UIResponder.keyboardWillShowNotification, UIResponder.keyboardWillHideNotification]
 		keyboardTriggers.forEach { notificationName in
 			NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: .main, using: handleKeyboardVisibilityChange(_:))
 		}
@@ -73,14 +75,19 @@ internal final class TweakCollectionViewController: UIViewController {
 		tableView.reloadData()
 	}
 
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		self.hapticsPlayer.prepare()
+	}
+
 
 	// MARK: Events
 
 	@objc private func handleKeyboardVisibilityChange(_ notification: Notification) {
 		if
 			let userInfo = notification.userInfo,
-			let keyboardSize = userInfo[UIKeyboardFrameEndUserInfoKey] as? CGRect,
-			let animationDuration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? NSNumber
+			let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+			let animationDuration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber
 		{
 			UIView.animate(
 				withDuration: animationDuration.doubleValue,
@@ -117,6 +124,8 @@ internal final class TweakCollectionViewController: UIViewController {
 
 extension TweakCollectionViewController: UITableViewDelegate {
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+		tableView.deselectRow(at: indexPath, animated: true)
+
 		let tweak = tweakAtIndexPath(indexPath)
 		switch tweak.tweakViewDataType {
 		case .uiColor:
@@ -125,7 +134,14 @@ extension TweakCollectionViewController: UITableViewDelegate {
 		case .stringList:
 			let stringOptionVC = StringOptionViewController(anyTweak: tweak, tweakStore: self.tweakStore, delegate: self)
 			self.navigationController?.pushViewController(stringOptionVC, animated: true)
-		case .boolean, .integer, .cgFloat, .double:
+		case .action:
+			let actionTweak = tweak.tweak as! Tweak<TweakAction>
+			actionTweak.defaultValue.evaluateAllClosures()
+			self.hapticsPlayer.playNotificationSuccess()
+		case .integer, .cgFloat, .double, .string:
+			let cell = tableView.cellForRow(at: indexPath) as! TweakTableCell
+			cell.startEditingTextField()
+		case .boolean:
 			break
 		}
 	}
@@ -146,6 +162,10 @@ extension TweakCollectionViewController: UITableViewDelegate {
         headerView.delegate = self
         return headerView
     }
+
+	func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+		return true
+	}
 }
 
 extension TweakCollectionViewController: UITableViewDataSource {
@@ -215,7 +235,7 @@ fileprivate final class TweakGroupSectionHeader: UITableViewHeaderFooterView {
 	private let floatingButton: UIButton = {
 		let button = UIButton(type: .custom)
 		let buttonImage = UIImage(swiftTweaksImage: .floatingPlusButton).withRenderingMode(.alwaysTemplate)
-		button.setImage(buttonImage.imageTintedWithColor(AppTheme.Colors.controlTinted), for: UIControlState())
+		button.setImage(buttonImage.imageTintedWithColor(AppTheme.Colors.controlTinted), for: UIControl.State())
 		button.setImage(buttonImage.imageTintedWithColor(AppTheme.Colors.controlTintedPressed), for: .highlighted)
 		return button
 	}()
@@ -233,6 +253,11 @@ fileprivate final class TweakGroupSectionHeader: UITableViewHeaderFooterView {
 	var tweakGroup: TweakGroup? {
 		didSet {
 			titleLabel.text = tweakGroup?.title
+			guard let tweakGroup = tweakGroup else { return }
+			let shouldShowFloatingButton = tweakGroup.sortedTweaks.reduce(false) { (accum, tweak) -> Bool in
+				return accum || FloatingTweakGroupViewController.editingSupported(forTweak: tweak)
+			}
+			self.floatingButton.isHidden = !shouldShowFloatingButton
 		}
 	}
 
