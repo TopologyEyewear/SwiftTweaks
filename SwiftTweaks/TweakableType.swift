@@ -16,7 +16,7 @@ public protocol TweakableType {
 }
 
 /// The data types that are currently supported for SwiftTweaks.
-/// While Tweak<T> is generic, we have to build UI for editing each kind of <T> - hence the need for a protocol to restrict what can be tweaked.
+/// While Tweak<T> is generic, we have to build UI for editing each kind of <T> - hence the need for a protocol to restrict what cavare tweaked.
 /// Of course, we can add new TweakViewDataTypes over time, too!
 public enum TweakViewDataType {
 	case boolean
@@ -24,10 +24,12 @@ public enum TweakViewDataType {
 	case cgFloat
 	case double
 	case uiColor
+	case string
 	case stringList
+	case action
 
 	public static let allTypes: [TweakViewDataType] = [
-		.boolean, .integer, .cgFloat, .double, .uiColor, .stringList
+		.boolean, .integer, .cgFloat, .action, .double, .uiColor, .string, .stringList, 
 	]
 }
 
@@ -40,7 +42,9 @@ public enum TweakDefaultData {
 	case float(defaultValue: CGFloat, min: CGFloat?, max: CGFloat?, stepSize: CGFloat?)
 	case doubleTweak(defaultValue: Double, min: Double?, max: Double?, stepSize: Double?)
 	case color(defaultValue: UIColor)
+	case string(defaultValue: String)
 	case stringList(defaultValue: StringOption, options: [StringOption])
+	case action(defaultValue: TweakAction)
 }
 
 // MARK: Types that conform to TweakableType
@@ -95,3 +99,8 @@ extension UIColor: TweakableType {
 	}
 }
 
+extension String: TweakableType {
+	public static var tweakViewDataType: TweakViewDataType {
+		return .string
+	}
+}

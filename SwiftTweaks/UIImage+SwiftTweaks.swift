@@ -14,6 +14,7 @@ internal extension UIImage {
 		case disclosureIndicator = "disclosure-indicator"
 		case floatingPlusButton = "floating-plus-button"
 		case floatingCloseButton = "floating-ui-close"
+		case floatingReopenButton = "floating-ui-open-tweaks"
 		case floatingMinimizedArrow = "floating-ui-minimized-arrow"
 	}
 
@@ -28,7 +29,7 @@ internal extension UIImage {
 	}
 
 	/// Returns the image, tinted to the given color.
-	internal func imageTintedWithColor(_ color: UIColor) -> UIImage {
+	func imageTintedWithColor(_ color: UIColor) -> UIImage {
 		let imageRect = CGRect(origin: CGPoint.zero, size: self.size)
 
 		UIGraphicsBeginImageContextWithOptions(imageRect.size, false, 0.0) // Retina aware.

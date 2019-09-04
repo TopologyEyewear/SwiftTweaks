@@ -27,12 +27,16 @@ public struct ExampleTweaks: TweakLibraryType {
 	public static let colorText1 = Tweak("Text", "Color", "text-1", UIColor.black)
 	public static let colorText2 = Tweak("Text", "Color", "text-2", UIColor(hue: 213/255, saturation: 0.07, brightness: 0.58, alpha: 1))
 
-    public static let title = Tweak<StringOption>.stringList("Text", "Text", "Title", options: ["SwiftTweaks", "Welcome!", "Example"])
+    public static let title = Tweak("Text", "Text", "Title", options: ["SwiftTweaks", "Welcome!", "Example"])
+	public static let subtitle = Tweak<String>("Text", "Text", "Subtitle", "Subtitle")
 
 	// Tweaks are often used in combination with each other, so we have some templates available for ease-of-use:
 	public static let buttonAnimation = SpringAnimationTweakTemplate("Animation", "Button Animation", duration: 0.5) // Note: "duration" is optional, if you don't provide it, there's a sensible default!
 
-	/*
+    // You can even run your own code from a tweak! More on this in this example's ViewController.swift file
+    public static let actionPrintToConsole = Tweak<TweakAction>("General", "Actions", "Print to console")
+    
+    /*
 	Seriously, SpringAnimationTweakTemplate is *THE BEST* - here's what the equivalent would be if you were to make that by hand:
 
 	public static let animationDuration = Tweak<Double>("Animation", "Button Animation", "Duration", defaultValue: 0.5, min: 0.0)
@@ -55,12 +59,15 @@ public struct ExampleTweaks: TweakLibraryType {
 			colorText1,
 			colorText2,
 			title,
+			subtitle,
 
 			fontSizeText1,
 			fontSizeText2,
 
 			buttonAnimation,
 
+            actionPrintToConsole,
+            
 			featureFlagMainScreenHelperText
 		]
 

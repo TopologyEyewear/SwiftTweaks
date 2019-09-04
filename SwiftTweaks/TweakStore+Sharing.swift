@@ -9,7 +9,7 @@
 import UIKit
 
 internal extension TweakStore {
-	internal var textRepresentation: String {
+	var textRepresentation: String {
 		// Let's sort our tweaks by collection/group/name, and then return the list!
 		let returnValue: String = sortedTweakCollections
 			.reduce([]) { $0 + $1.allTweaks }
@@ -35,11 +35,11 @@ extension TweakStoreActivityItemSource: UIActivityItemSource {
 		return textRepresentation
 	}
 
-	@objc func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivityType?) -> String {
+	@objc func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
 		return "SwiftTweaks Backup"
 	}
 
-	@objc func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivityType?) -> Any? {
+	@objc func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
 		return textRepresentation
 	}
 }
