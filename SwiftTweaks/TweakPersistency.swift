@@ -1,7 +1,7 @@
 //
 //  TweakPersistency.swift
 //  SwiftTweaks
-//
+//c
 //  Created by Bryan Clark on 11/16/15.
 //  Copyright © 2015 Khan Academy. All rights reserved.
 //
@@ -13,18 +13,13 @@ internal protocol TweakIdentifiable {
 	var persistenceIdentifier: String { get }
 }
 
-/// Caches Tweak values
-internal typealias TweakCache = [String: TweakableType]
-
-
-/// Persists state for tweaks in a TweakCache
 internal final class TweakPersistency {
 	private let diskPersistency: TweakDiskPersistency
 
-	private var tweakCache: TweakCache = [:]
+	private var tweakCache = TweakCache()
 
-	init(identifier: String, appGroup: String?) {
-		self.diskPersistency = TweakDiskPersistency(identifier: identifier, appGroup: appGroup)
+	init(identifier: String) {
+		self.diskPersistency = TweakDiskPersistency(identifier: identifier)
 		self.tweakCache = self.diskPersistency.loadFromDisk()
 	}
 
@@ -44,17 +39,17 @@ internal final class TweakPersistency {
 	}
 
 	internal func persistedValueForTweakIdentifiable(_ tweakID: TweakIdentifiable) -> TweakableType? {
-		return tweakCache[tweakID.persistenceIdentifier]
+		return tweakCache.get(key: tweakID.persistenceIdentifier)
 	}
 
 	internal func setValue(_ value: TweakableType?,  forTweakIdentifiable tweakID: TweakIdentifiable) {
-		tweakCache[tweakID.persistenceIdentifier] = value
-		self.diskPersistency.saveToDisk(tweakCache)
+		tweakCache.set(key: tweakID.persistenceIdentifier, value: value)
+		diskPersistency.saveToDisk(tweakCache)
 	}
 
 	internal func clearAllData() {
-		tweakCache = [:]
-		self.diskPersistency.saveToDisk(tweakCache)
+		tweakCache = TweakCache()
+		diskPersistency.saveToDisk(tweakCache)
 	}
 }
 
@@ -62,133 +57,124 @@ internal final class TweakPersistency {
 private final class TweakDiskPersistency {
 	private let fileURL: URL
 
-	private static func fileURLForIdentifier(_ identifier: String, appGroup: String?) -> URL {
-		guard let appGroupName = appGroup else {
-			return try! FileManager().url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-				.appendingPathComponent("SwiftTweaks")
-				.appendingPathComponent("\(identifier)")
-				.appendingPathExtension("db")
-		}
-		return FileManager().containerURL(forSecurityApplicationGroupIdentifier: appGroupName)!
+	private static func fileURLForIdentifier(_ identifier: String) -> URL {
+		return try! FileManager().url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
 			.appendingPathComponent("SwiftTweaks")
 			.appendingPathComponent("\(identifier)")
 			.appendingPathExtension("db")
 	}
 
-	private let queue = DispatchQueue(label: "org.khanacademy.swift_tweaks.disk_persistency", attributes: [])
-
-	private static let dataClassName = "TweakDiskPersistency.Data"
-
-	init(identifier: String, appGroup: String?) {
-		NSKeyedUnarchiver.setClass(TweakDiskPersistency.Data.self, forClassName: TweakDiskPersistency.dataClassName)
-		NSKeyedArchiver.setClassName(TweakDiskPersistency.dataClassName, for: TweakDiskPersistency.Data.self)
-
-		self.fileURL = TweakDiskPersistency.fileURLForIdentifier(identifier, appGroup: appGroup)
-		self.ensureDirectoryExists()
-	}
-
-	/// Creates a directory (if needed) for our persisted TweakCache on disk
-	private func ensureDirectoryExists() {
-		self.queue.async {
-			try! FileManager.default.createDirectory(at: self.fileURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
-		}
+	init(identifier: String) {
+		self.fileURL = TweakDiskPersistency.fileURLForIdentifier(identifier)
+		try? FileManager.default.createDirectory(at: self.fileURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
 	}
 
 	func loadFromDisk() -> TweakCache {
-		var result: TweakCache!
-
-		self.queue.sync {
-			result = (try? Foundation.Data(contentsOf: self.fileURL))
-				.flatMap {
-					let result = NSKeyedUnarchiver.unarchiveObject(with: $0) as? TweakDiskPersistency.Data
-					return result?.cache
-				}
-				?? [:]
-		}
-
-		return result
-	}
-
-	func saveToDisk(_ data: TweakCache) {
-		self.queue.async {
-			let nsData = NSKeyedArchiver.archivedData(withRootObject: Data(cache: data))
-			try! nsData.write(to: self.fileURL, options: [.atomic])
+		if let data = try? Data(contentsOf: fileURL),
+			 let cache = try? JSONDecoder().decode(TweakCache.self, from: data) {
+			return cache
+		} else {
+			return TweakCache()
 		}
 	}
 
-	/// Implements NSCoding for TweakCache.
-	/// TweakCache a flat dictionary: [String: TweakableType]. 
-	/// However, because re-hydrating TweakableType from its underlying NSNumber gets Bool & Int mixed up, we have to persist a different structure on disk: [TweakViewDataType: [String: AnyObject]]
-	/// This ensures that if something was saved as a Bool, it's read back as a Bool.
-	// NOTE (bryanjclark): The long string here is to preserve backwards-compatibility with pre-Swift4 SwiftTweaks archives.
-	@objc(_TtCC11SwiftTweaksP33_9992646B9FE5A082B6B2A55DA4E653F420TweakDiskPersistency4Data) private final class Data: NSObject, NSCoding {
-		let cache: TweakCache
-
-		init(cache: TweakCache) {
-			self.cache = cache
-		}
-
-		@objc convenience init?(coder aDecoder: NSCoder) {
-			var cache: TweakCache = [:]
-
-			// Read through each TweakViewDataType...
-			for dataType in TweakViewDataType.allTypes {
-				// If a sub-dictionary exists for that type,
-				if let dataTypeDictionary = aDecoder.decodeObject(forKey: dataType.nsCodingKey) as? Dictionary<String, AnyObject> {
-					// Read through each entry and populate the cache
-					for (key, value) in dataTypeDictionary {
-						if let value = Data.tweakableTypeWithAnyObject(value, withType: dataType) {
-							cache[key] = value
-						}
-					}
-				}
-			}
-
-			self.init(cache: cache)
-		}
-
-		@objc fileprivate func encode(with aCoder: NSCoder) {
-
-			// Our "dictionary of dictionaries" that is persisted on disk
-			var diskPersistedDictionary: [TweakViewDataType : [String: AnyObject]] = [:]
-
-			// For each thing in our TweakCache,
-			for (key, value) in cache {
-				let dataType = type(of: value).tweakViewDataType
-
-				// ... create the "sub-dictionary" if it doesn't already exist for a particular TweakViewDataType
-				if diskPersistedDictionary[dataType] == nil {
-					diskPersistedDictionary[dataType] = [:]
-				}
-
-				// ... and set the cached value inside the sub-dictionary.
-				diskPersistedDictionary[dataType]![key] = value.nsCoding
-			}
-
-			// Now we persist the "dictionary of dictionaries" on disk!
-			for (key, value) in diskPersistedDictionary {
-				aCoder.encode(value, forKey: key.nsCodingKey)
-			}
-		}
-
-		// Reads from the cache, casting to the appropriate TweakViewDataType
-		private static func tweakableTypeWithAnyObject(_ anyObject: AnyObject, withType type: TweakViewDataType) -> TweakableType? {
-			switch type {
-			case .integer: return anyObject as? Int
-			case .boolean: return anyObject as? Bool
-			case .cgFloat: return anyObject as? CGFloat
-			case .double: return anyObject as? Double
-			case .uiColor: return anyObject as? UIColor
-			case .string: return anyObject as? String
-			case .stringList:
-				guard let stringOptionString = anyObject as? String else {
-					return nil
-				}
-				return StringOption(value: stringOptionString)
-			case .action: return nil
-			}
+	func saveToDisk(_ cache: TweakCache) {
+		if let data = try? JSONEncoder().encode(cache) {
+			try? data.write(to: fileURL)
 		}
 	}
+}
+
+// Note: Could pass in key and Tweakable type in order to avoid needing to cast/check keys to determine type.
+
+class TweakCache: Codable {
+	var boolean: [String:Bool] = [:]
+	var integer: [String:Int] = [:]
+	var cgFloat: [String:CGFloat] = [:]
+	var double: [String:Double] = [:]
+	var color: [String:CodableColor] = [:]
+	var string: [String:String] = [:]
+	var stringList: [String:String] = [:]
+//	var action: [String:TweakAction] = [:]
+}
+
+extension TweakCache {
+	func get(key: String) -> TweakableType? {
+		guard let type = getKnownKeyType(key: key) else { return nil }
+		switch type {
+		case .boolean:
+			return boolean[key]
+		case .integer:
+			return integer[key]
+		case .cgFloat:
+			return cgFloat[key]
+		case .double:
+			return double[key]
+		case .color:
+			return color[key]?.asTweakColor
+		case .string:
+			return string[key]
+		case .stringList:
+			return stringList[key]
+		}
+	}
+	
+	func set(key: String, value: TweakableType?) {
+		if let value = value {
+			// If switch to use TweakViewDataType, could avoid unneeded casts.
+			if let boolean = value as? Bool { self.boolean[key] = boolean }
+			if let integer = value as? Int { self.integer[key] = integer }
+			if let cgFloat = value as? CGFloat { self.cgFloat[key] = cgFloat }
+			if let double = value as? Double { self.double[key] = double }
+			if let color = value as? TweakColor { self.color[key] = CodableColor(color) }
+			if let string = value as? String { self.string[key] = string }
+		} else {
+			remove(key: key)
+		}
+	}
+	
+	private func remove(key: String) {
+		guard let type = getKnownKeyType(key: key) else { return }
+		switch type {
+		case .boolean:
+			boolean[key] = nil
+		case .integer:
+			integer[key] = nil
+		case .cgFloat:
+			cgFloat[key] = nil
+		case .double:
+			double[key] = nil
+		case .color:
+			color[key] = nil
+		case .string:
+			string[key] = nil
+		case .stringList:
+			stringList[key] = nil
+		}
+	}
+	
+	private func getKnownKeyType(key: String) -> KeyType? {
+		if boolean.keys.contains(key) { return .boolean }
+		if integer.keys.contains(key) { return .integer }
+		if cgFloat.keys.contains(key) { return .cgFloat }
+		if double.keys.contains(key) { return .double }
+		if color.keys.contains(key) { return .color }
+		if string.keys.contains(key) { return .string }
+		if stringList.keys.contains(key) { return .stringList }
+		return nil
+	}
+}
+
+// Could probably replace with TweakViewDataType
+enum KeyType {
+	case boolean
+	case integer
+	case cgFloat
+	case double
+	case color
+	case string
+	case stringList
+//	case action
 }
 
 private extension TweakViewDataType {
@@ -220,5 +206,18 @@ private extension TweakableType {
 			case .stringList: return (self as! StringOption).value as AnyObject
 			case .action: return true as AnyObject
 		}
+	}
+}
+
+struct CodableColor: Codable {
+	let r,b,g,a: CGFloat
+	init(_ tweakColor: TweakColor) {
+		self.r = tweakColor.ciColor.red
+		self.g = tweakColor.ciColor.green
+		self.b = tweakColor.ciColor.blue
+		self.a = tweakColor.ciColor.alpha
+	}
+	var asTweakColor: TweakColor {
+		return TweakColor(red: r, green: g, blue: b, alpha: a)
 	}
 }

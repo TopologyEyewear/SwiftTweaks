@@ -8,10 +8,10 @@
 
 import UIKit
 
-internal protocol TweaksCollectionsListViewControllerDelegate: AnyObject {
+internal protocol TweaksCollectionsListViewControllerDelegate {
 	func tweaksCollectionsListViewControllerDidTapDismissButton(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController)
+	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectTweakCollection: TweakCollection)
 	func tweaksCollectionsListViewControllerDidTapShareButton(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, shareButton: UIBarButtonItem)
-	func tweakCollectionListViewController(_ tweakCollectionViewController: TweaksCollectionsListViewController, didTapFloatingTweakGroupButtonForTweakGroup tweakGroup: TweakGroup)
 }
 
 /// Displays a list of TweakCollections in a table.
@@ -19,7 +19,8 @@ internal final class TweaksCollectionsListViewController: UIViewController {
 	private let tableView: UITableView
 
 	fileprivate let tweakStore: TweakStore
-	fileprivate unowned var delegate: TweaksCollectionsListViewControllerDelegate
+	fileprivate let delegate: TweaksCollectionsListViewControllerDelegate
+
 
 	// MARK: Init
 
@@ -30,8 +31,6 @@ internal final class TweaksCollectionsListViewController: UIViewController {
 		self.tableView = UITableView(frame: CGRect.zero, style: .plain)
 
 		super.init(nibName: nil, bundle: nil)
-		
-		self.navigationItem.title = NSLocalizedString("Tweaks", comment: "Navigation title for Tweaks")
 	}
 
 	required init?(coder aDecoder: NSCoder) {
@@ -61,7 +60,7 @@ internal final class TweaksCollectionsListViewController: UIViewController {
 
 		toolbarItems = [
 			UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
-			UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(self.dismissButtonTapped))
+			UIBarButtonItem(title: "Dismiss", style: .done, target: self, action: #selector(self.dismissButtonTapped))
 		]
 	}
 
@@ -128,26 +127,6 @@ extension TweaksCollectionsListViewController: UITableViewDataSource {
 
 extension TweaksCollectionsListViewController: UITableViewDelegate {
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-		let tweakCollection = tweakStore.sortedTweakCollections[indexPath.row]
-
-		let viewController = TweakCollectionViewController(
-			tweakCollection: tweakCollection,
-			tweakStore: self.tweakStore,
-			delegate: self
-		)
-		self.navigationController?.pushViewController(viewController, animated: true)
-	}
-}
-
-extension TweaksCollectionsListViewController: TweakCollectionViewControllerDelegate {
-	func tweakCollectionViewControllerDidPressDismissButton(_ tweakCollectionViewController: TweakCollectionViewController) {
-		self.delegate.tweaksCollectionsListViewControllerDidTapDismissButton(self)
-	}
-
-	func tweakCollectionViewController(
-		_ tweakCollectionViewController: TweakCollectionViewController,
-		didTapFloatingTweakGroupButtonForTweakGroup tweakGroup: TweakGroup
-	) {
-		self.delegate.tweakCollectionListViewController(self, didTapFloatingTweakGroupButtonForTweakGroup: tweakGroup)
+		delegate.tweaksCollectionsListViewController(self, didSelectTweakCollection: tweakStore.sortedTweakCollections[(indexPath as NSIndexPath).row])
 	}
 }

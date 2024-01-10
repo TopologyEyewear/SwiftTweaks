@@ -7,7 +7,6 @@
 //
 
 import XCTest
-@testable import SwiftTweaks
 
 private struct PrecisionTestCase<T: Roundable> {
 	let inputValue: T

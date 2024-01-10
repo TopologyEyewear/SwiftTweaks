@@ -15,11 +15,8 @@ internal struct AppTheme {
 			static let whiteColor = UIColor.white
 			static let blackColor = UIColor.black
 			static let grayColor = UIColor(hex: 0x8E8E93)
-
-			static let primaryBackground = UIColor.white
-			static let secondaryBackground = UIColor(hex: 0xF8F8F8)
-
-			static let touchHighlight = UIColor(hex: 0xCCCCCC).withAlphaComponent(0.2)
+			static let pageBackground1 = UIColor(hex: 0xF8F8F8)
+			static let touchHighlight = UIColor(hex: 0xF2F2F2)
 
 			static let tintColor = UIColor(hex: 0x007AFF)
 			static let tintColorPressed = UIColor(hex: 0x084BC1)
@@ -31,21 +28,9 @@ internal struct AppTheme {
 			static let destructiveRed = UIColor(hex: 0xC90911)
 		}
 
-		static let textPrimary: UIColor = {
-			if #available(iOS 13.0, *) {
-				return UIColor.label
-			} else {
-				return UIColor.black
-			}
-		}()
+		static let sectionHeaderTitleColor = Palette.grayColor
 
-		static let textSecondary: UIColor = {
-			if #available(iOS 13.0, *) {
-				return UIColor.secondaryLabel
-			} else {
-				return Palette.grayColor
-			}
-		}()
+		static let textPrimary = Palette.blackColor
 
 		static let controlTinted = Palette.tintColor
 		static let controlTintedPressed = Palette.tintColorPressed
@@ -55,29 +40,9 @@ internal struct AppTheme {
 		static let controlSecondaryPressed = Palette.secondaryControlPressed
 		static let controlGrayscale = Palette.controlGrayscale
 
-		static let primaryBackground: UIColor = {
-			if #available(iOS 13.0, *) {
-				return UIColor.systemBackground
-			} else {
-				return Palette.primaryBackground
-			}
-		}()
-		static let secondaryBackground: UIColor = {
-			if #available(iOS 13.0, *) {
-				return UIColor.secondarySystemBackground
-			} else {
-				return Palette.secondaryBackground
-			}
-		}()
+		static let floatingTweakGroupNavBG = Palette.pageBackground1
 
-		static let tableSeparator: UIColor = {
-			if #available(iOS 13.0, *) {
-				return UIColor.separator
-			} else {
-				return Palette.secondaryControl
-			}
-		}()
-
+		static let tableSeparator = Palette.secondaryControl
 		static let tableCellTouchHighlight = Palette.touchHighlight
 
 		static let debugRed = UIColor.red.withAlphaComponent(0.3)

@@ -8,7 +8,14 @@
 
 import Foundation
 import CoreGraphics
+
+// Hack for cross platform because macOs does not support UIKit
+#if canImport(UIKit)
 import UIKit
+public typealias TweakColor = UIColor
+#else // macOs
+public typealias TweakColor = NSColor
+#endif
 
 /// To add a new <T> to our Tweak<T>, make T conform to this protocol.
 public protocol TweakableType {
@@ -41,7 +48,13 @@ public enum TweakDefaultData {
 	case integer(defaultValue: Int, min: Int?, max: Int?, stepSize: Int?)
 	case float(defaultValue: CGFloat, min: CGFloat?, max: CGFloat?, stepSize: CGFloat?)
 	case doubleTweak(defaultValue: Double, min: Double?, max: Double?, stepSize: Double?)
+
+	#if canImport(UIKit)
 	case color(defaultValue: UIColor)
+	#else // macOs
+	case color(defaultValue: NSColor)
+	#endif
+
 	case string(defaultValue: String)
 	case stringList(defaultValue: StringOption, options: [StringOption])
 	case action(defaultValue: TweakAction)
@@ -51,7 +64,7 @@ public enum TweakDefaultData {
 
 public struct StringOption {
 	public let value: String
-	public init(value: String) {
+	init(value: String) {
 		self.value = value
 	}
 }
@@ -93,7 +106,7 @@ extension Double: TweakableType {
 	}
 }
 
-extension UIColor: TweakableType {
+extension TweakColor: TweakableType {
 	public static var tweakViewDataType: TweakViewDataType {
 		return .uiColor
 	}

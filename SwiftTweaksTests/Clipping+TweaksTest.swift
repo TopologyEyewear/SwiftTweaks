@@ -7,7 +7,6 @@
 //
 
 import XCTest
-@testable import SwiftTweaks
 
 private struct ClippingTestCase<T> where T: SignedNumeric, T: Comparable {
 	let inputValue: T

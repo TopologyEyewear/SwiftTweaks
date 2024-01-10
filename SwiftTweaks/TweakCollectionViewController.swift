@@ -8,7 +8,7 @@
 
 import UIKit
 
-internal protocol TweakCollectionViewControllerDelegate: AnyObject {
+internal protocol TweakCollectionViewControllerDelegate {
 	func tweakCollectionViewControllerDidPressDismissButton(_ tweakCollectionViewController: TweakCollectionViewController)
 	func tweakCollectionViewController(_ tweakCollectionViewController: TweakCollectionViewController, didTapFloatingTweakGroupButtonForTweakGroup tweakGroup: TweakGroup)
 }
@@ -18,7 +18,7 @@ internal final class TweakCollectionViewController: UIViewController {
 	fileprivate let tweakCollection: TweakCollection
 	fileprivate let tweakStore: TweakStore
 
-	fileprivate unowned var delegate: TweakCollectionViewControllerDelegate
+	fileprivate let delegate: TweakCollectionViewControllerDelegate
 
 	fileprivate let tableView: UITableView = {
 		let tableView = UITableView(frame: CGRect.zero, style: .grouped)
@@ -39,7 +39,7 @@ internal final class TweakCollectionViewController: UIViewController {
 
 		toolbarItems = [
 			UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
-			UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(self.dismissButtonTapped))
+			UIBarButtonItem(title: TweaksViewController.dismissButtonTitle, style: .done, target: self, action: #selector(self.dismissButtonTapped))
 		]
 	}
 
@@ -242,7 +242,7 @@ fileprivate final class TweakGroupSectionHeader: UITableViewHeaderFooterView {
 
 	private let titleLabel: UILabel = {
 		let label = UILabel()
-		label.textColor = AppTheme.Colors.textSecondary
+		label.textColor = AppTheme.Colors.sectionHeaderTitleColor
 		label.font = AppTheme.Fonts.sectionHeaderTitleFont
 
 		return label

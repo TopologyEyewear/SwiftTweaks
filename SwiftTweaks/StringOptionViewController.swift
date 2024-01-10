@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-internal protocol StringOptionViewControllerDelegate: AnyObject {
+internal protocol StringOptionViewControllerDelegate {
 	func stringOptionViewControllerDidPressDismissButton(_ tweakSelectionViewController: StringOptionViewController)
 }
 
@@ -17,7 +17,7 @@ internal protocol StringOptionViewControllerDelegate: AnyObject {
 internal class StringOptionViewController: UITableViewController {
 	fileprivate let tweak: Tweak<StringOption>
 	fileprivate let tweakStore: TweakStore
-	fileprivate unowned var delegate: StringOptionViewControllerDelegate
+	fileprivate let delegate: StringOptionViewControllerDelegate
 	
 	fileprivate var currentOption: String {
 		didSet {
@@ -51,7 +51,7 @@ internal class StringOptionViewController: UITableViewController {
 		title = tweak.tweakName
 		toolbarItems = [
 			UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
-			UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(self.dismissButtonTapped))
+			UIBarButtonItem(title: TweaksViewController.dismissButtonTitle, style: .done, target: self, action: #selector(self.dismissButtonTapped))
 		]
 		
 		self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Reset", style: .plain, target: self, action: #selector(StringOptionViewController.restoreDefaultValue))
