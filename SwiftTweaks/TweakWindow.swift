@@ -91,7 +91,7 @@ import UIKit
 	}
 
 	private func configure() {
-		tintColor = AppTheme.Colors.controlTinted
+		tintColor = AppTheme.Colors.windowTint
 
 		if tweakStore.enabled {
 			switch gestureType {

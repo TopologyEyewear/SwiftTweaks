@@ -144,11 +144,8 @@ extension TweaksCollectionsListViewController: UITableViewDataSource {
 		let entry = entries[indexPath.row]
 		cell.textLabel!.text = entry.title
 		cell.detailTextLabel!.text = "\(entry.numberOfTweaks)"
-		if case .folder = entry {
-			cell.imageView?.image = UIImage(systemName: "folder")
-		} else {
-			cell.imageView?.image = nil
-		}
+		// Every row of the root list is a folder of sorts, so every one gets the icon; inside a folder, none do.
+		cell.imageView?.image = isFolder ? nil : UIImage(systemName: "folder")
 		return cell
 	}
 }
