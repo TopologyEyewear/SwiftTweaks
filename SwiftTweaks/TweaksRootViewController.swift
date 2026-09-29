@@ -123,6 +123,11 @@ extension TweaksRootViewController: TweaksCollectionsListViewControllerDelegate 
 		self.navigationController?.pushViewController(tweakCollectionViewController, animated: true)
 	}
 
+	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectFolder title: String, collections: [TweakCollection]) {
+		let folderViewController = TweaksCollectionsListViewController(folderTitle: title, collections: collections, tweakStore: tweakStore, delegate: self)
+		self.navigationController?.pushViewController(folderViewController, animated: true)
+	}
+
 	func tweaksCollectionsListViewControllerDidTapShareButton(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, shareButton: UIBarButtonItem) {
 		let activityVC = UIActivityViewController(activityItems: [TweakStoreActivityItemSource(text: tweakStore.textRepresentation)], applicationActivities: nil)
 		activityVC.popoverPresentationController?.barButtonItem = shareButton

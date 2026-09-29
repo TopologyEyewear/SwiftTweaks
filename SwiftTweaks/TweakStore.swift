@@ -38,12 +38,20 @@ public final class TweakStore {
 	/// Determines whether tweaks are enabled, and whether the tweaks UI is accessible
 	internal let enabled: Bool
 
+	/// Names the folder a collection is listed under on the root Tweaks screen, or nil to list it at the top level.
+	private let folderForCollection: (String) -> String?
+
 	/// Creates a TweakStore, with information persisted on-disk. 
 	/// If you want to have multiple TweakStores in your app, you can pass in a unique storeName to keep it separate from others on disk.
-	public init(tweaks: [TweakClusterType], storeName: String = "Tweaks", enabled: Bool) {
+	///
+	/// `folderForCollection` groups collections into folders on the root Tweaks screen, given each collection's name.
+	/// It only changes where a collection is listed: persisted values are keyed on the collection name, which it leaves alone,
+	/// so moving a collection into or out of a folder keeps every value its tweaks hold.
+	public init(tweaks: [TweakClusterType], storeName: String = "Tweaks", enabled: Bool, folderForCollection: @escaping (String) -> String? = { _ in nil }) {
 		self.persistence = TweakPersistency(identifier: storeName)
 		self.storeName = storeName
 		self.enabled = enabled
+		self.folderForCollection = folderForCollection
 		self.allTweaks = Set(tweaks.reduce([]) { $0 + $1.tweakCluster })
 
 		self.allTweaks.forEach { tweak in
@@ -206,5 +214,40 @@ extension TweakStore {
 		return tweakCollections
 			.sorted { $0.0 < $1.0 }
 			.map { return $0.1 }
+	}
+
+	/// The rows of the root Tweaks screen: the collections outside any folder, then the folders, each sorted alphabetically.
+	internal var rootListEntries: [TweakListEntry] {
+		var looseCollections: [TweakCollection] = []
+		var folders: [String: [TweakCollection]] = [:]
+		for collection in sortedTweakCollections {
+			if let folder = folderForCollection(collection.title) {
+				folders[folder, default: []].append(collection)
+			} else {
+				looseCollections.append(collection)
+			}
+		}
+		return looseCollections.map(TweakListEntry.collection)
+			+ folders.sorted { $0.key < $1.key }.map { TweakListEntry.folder(title: $0.key, collections: $0.value) }
+	}
+}
+
+/// A row in a list of collections: a collection, or a folder of them.
+internal enum TweakListEntry {
+	case collection(TweakCollection)
+	case folder(title: String, collections: [TweakCollection])
+
+	var title: String {
+		switch self {
+		case let .collection(collection): return collection.title
+		case let .folder(title, _): return title
+		}
+	}
+
+	var numberOfTweaks: Int {
+		switch self {
+		case let .collection(collection): return collection.numberOfTweaks
+		case let .folder(_, collections): return collections.reduce(0) { $0 + $1.numberOfTweaks }
+		}
 	}
 }
