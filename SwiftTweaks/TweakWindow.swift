@@ -60,20 +60,37 @@ import UIKit
 
 	// MARK: Init
 
+	/// Creates a tweak window attached to `windowScene`, for apps on the UIScene life cycle.
+	public init(windowScene: UIWindowScene, gestureType: GestureType = .shake, tweakStore: TweakStore) {
+		self.gestureType = gestureType
+		self.tweakStore = tweakStore
+		self.runningInSimulator = TweakWindow.isRunningInSimulator
+
+		super.init(windowScene: windowScene)
+
+		configure()
+	}
+
 	public init(frame: CGRect, gestureType: GestureType = .shake, tweakStore: TweakStore) {
 		self.gestureType = gestureType
-
 		self.tweakStore = tweakStore
-
-		// Are we running on a Mac? If so, then we're in a simulator!
-		#if (arch(i386) || arch(x86_64))
-			self.runningInSimulator = true
-		#else
-			self.runningInSimulator = false
-		#endif
+		self.runningInSimulator = TweakWindow.isRunningInSimulator
 
 		super.init(frame: frame)
 
+		configure()
+	}
+
+	/// Are we running on a Mac? If so, then we're in a simulator!
+	private static var isRunningInSimulator: Bool {
+		#if (arch(i386) || arch(x86_64))
+			return true
+		#else
+			return false
+		#endif
+	}
+
+	private func configure() {
 		tintColor = AppTheme.Colors.controlTinted
 
 		if tweakStore.enabled {
@@ -177,14 +194,18 @@ extension TweakWindow: FloatingTweaksWindowPresenter {
 	internal func presentFloatingTweaksUI(forTweakGroup tweakGroup: TweakGroup) {
 		guard floatingTweakGroupUIWindow == nil else { return }
 
-		let window = HitTransparentWindow()
-		window.frame = UIScreen.main.bounds
+		// The floating window has to join this window's scene: on the UIScene life cycle a window
+		// with no scene never appears.
+		let window: HitTransparentWindow
+		if let windowScene = self.windowScene {
+			window = HitTransparentWindow(windowScene: windowScene)
+		} else {
+			window = HitTransparentWindow()
+			window.frame = UIScreen.main.bounds
+		}
 		window.backgroundColor = UIColor.clear
 
-		var originY = window.frame.size.height - FloatingTweakGroupViewController.height - FloatingTweakGroupViewController.margins
-		if #available(iOS 11.0, *) {
-			originY = originY - self.safeAreaInsets.bottom
-		}
+		let originY = window.frame.size.height - FloatingTweakGroupViewController.height - FloatingTweakGroupViewController.margins - self.safeAreaInsets.bottom
 
 		let floatingTweakGroupFrame = CGRect(
 			origin: CGPoint(

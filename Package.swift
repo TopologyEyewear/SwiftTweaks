@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftTweaks",
-    platforms: [.iOS(.v11)],
+    platforms: [.iOS(.v13)],
     products: [.library(name: "SwiftTweaks", targets: ["SwiftTweaks"])],
     targets: [
         .target(
