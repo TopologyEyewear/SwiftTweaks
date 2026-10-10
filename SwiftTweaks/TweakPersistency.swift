@@ -115,7 +115,8 @@ extension TweakCache {
 		case .string:
 			return string[key]
 		case .stringList:
-			return stringList[key]
+			// the store reads a string-list tweak back as a StringOption
+			return stringList[key].map { StringOption(value: $0) }
 		}
 	}
 	
@@ -128,6 +129,7 @@ extension TweakCache {
 			if let double = value as? Double { self.double[key] = double }
 			if let color = value as? TweakColor { self.color[key] = CodableColor(color) }
 			if let string = value as? String { self.string[key] = string }
+			if let option = value as? StringOption { self.stringList[key] = option.value }
 		} else {
 			remove(key: key)
 		}
