@@ -123,8 +123,8 @@ extension TweaksRootViewController: TweaksCollectionsListViewControllerDelegate 
 		self.navigationController?.pushViewController(tweakCollectionViewController, animated: true)
 	}
 
-	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectFolder title: String, collections: [TweakCollection]) {
-		let folderViewController = TweaksCollectionsListViewController(folderTitle: title, collections: collections, tweakStore: tweakStore, delegate: self)
+	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectFolder title: String, entries: [TweakListEntry]) {
+		let folderViewController = TweaksCollectionsListViewController(folderTitle: title, entries: entries, tweakStore: tweakStore, delegate: self)
 		self.navigationController?.pushViewController(folderViewController, animated: true)
 	}
 

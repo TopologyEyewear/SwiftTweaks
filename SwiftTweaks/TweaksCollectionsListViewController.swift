@@ -11,13 +11,13 @@ import UIKit
 internal protocol TweaksCollectionsListViewControllerDelegate {
 	func tweaksCollectionsListViewControllerDidTapDismissButton(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController)
 	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectTweakCollection: TweakCollection)
-	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectFolder title: String, collections: [TweakCollection])
+	func tweaksCollectionsListViewController(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, didSelectFolder title: String, entries: [TweakListEntry])
 	func tweaksCollectionsListViewControllerDidTapShareButton(_ tweaksCollectionsListViewController: TweaksCollectionsListViewController, shareButton: UIBarButtonItem)
 }
 
 /// Displays a list of TweakCollections, and folders of them, in a table.
 ///
-/// The root list shows the whole store, with the Reset All and Export buttons; a folder's list shows only that folder's collections.
+/// The root list shows the whole store, with the Reset All and Export buttons; a folder's list shows only what is in that folder.
 internal final class TweaksCollectionsListViewController: UIViewController {
 	private let tableView: UITableView
 
@@ -40,10 +40,10 @@ internal final class TweaksCollectionsListViewController: UIViewController {
 		super.init(nibName: nil, bundle: nil)
 	}
 
-	internal init(folderTitle: String, collections: [TweakCollection], tweakStore: TweakStore, delegate: TweaksCollectionsListViewControllerDelegate) {
+	internal init(folderTitle: String, entries: [TweakListEntry], tweakStore: TweakStore, delegate: TweaksCollectionsListViewControllerDelegate) {
 		self.tweakStore = tweakStore
 		self.delegate = delegate
-		self.entries = collections.map(TweakListEntry.collection)
+		self.entries = entries
 		self.isFolder = true
 
 		self.tableView = UITableView(frame: CGRect.zero, style: .plain)
@@ -144,8 +144,8 @@ extension TweaksCollectionsListViewController: UITableViewDataSource {
 		let entry = entries[indexPath.row]
 		cell.textLabel!.text = entry.title
 		cell.detailTextLabel!.text = "\(entry.numberOfTweaks)"
-		// Every row of the root list is a folder of sorts, so every one gets the icon; inside a folder, none do.
-		cell.imageView?.image = isFolder ? nil : UIImage(systemName: "folder")
+		// Every row of the root list is a folder of sorts, so every one gets the icon; inside a folder, only the folders do.
+		cell.imageView?.image = !isFolder || entry.isFolder ? UIImage(systemName: "folder") : nil
 		return cell
 	}
 }
@@ -155,8 +155,8 @@ extension TweaksCollectionsListViewController: UITableViewDelegate {
 		switch entries[indexPath.row] {
 		case let .collection(collection):
 			delegate.tweaksCollectionsListViewController(self, didSelectTweakCollection: collection)
-		case let .folder(title, collections):
-			delegate.tweaksCollectionsListViewController(self, didSelectFolder: title, collections: collections)
+		case let .folder(title, entries):
+			delegate.tweaksCollectionsListViewController(self, didSelectFolder: title, entries: entries)
 		}
 	}
 }
