@@ -8,10 +8,18 @@
 
 import UIKit
 
+/// Lets the host app give the Tweaks UI its own accent colour.
+public enum TweaksAppearance {
+	/// Tints the Tweaks UI's buttons, switches, steppers and icons. Set it before the Tweaks UI is first shown.
+	///
+	/// It does not tint the `TweakWindow` itself, which is usually the app's main window.
+	public static var tintColor: UIColor = AppTheme.Colors.Palette.tintColor
+}
+
 /// A central "palette" so to help keep our design consistent.
 internal struct AppTheme {
 	struct Colors {
-		fileprivate struct Palette {
+		struct Palette {
 			static let whiteColor = UIColor.white
 			static let blackColor = UIColor.black
 			static let grayColor = UIColor(hex: 0x8E8E93)
@@ -32,8 +40,20 @@ internal struct AppTheme {
 
 		static let textPrimary = Palette.blackColor
 
-		static let controlTinted = Palette.tintColor
-		static let controlTintedPressed = Palette.tintColorPressed
+		static var controlTinted: UIColor { TweaksAppearance.tintColor }
+		/// A darker `controlTinted`, or the stock pressed blue while the tint is the stock blue.
+		static var controlTintedPressed: UIColor {
+			let tint = TweaksAppearance.tintColor
+			var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+			guard tint != Palette.tintColor,
+				  tint.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else {
+				return Palette.tintColorPressed
+			}
+			return UIColor(hue: hue, saturation: saturation, brightness: brightness * 0.75, alpha: alpha)
+		}
+		/// The `TweakWindow`'s own tint. Deliberately not `controlTinted`: the window is usually the app's, and the
+		/// Tweaks UI's accent colour should not repaint the app.
+		static let windowTint = Palette.tintColor
 		static let controlDisabled = Palette.secondaryControl
 		static let controlDestructive = Palette.destructiveRed
 		static let controlSecondary = Palette.secondaryControl

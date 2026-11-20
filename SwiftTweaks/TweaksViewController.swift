@@ -34,6 +34,8 @@ public final class TweaksViewController: UIViewController {
 		let tweakRootVC = TweaksRootViewController(tweakStore: tweakStore, delegate: self)
 		navController = UINavigationController(rootViewController: tweakRootVC)
 		navController.isToolbarHidden = false
+		// Bar buttons, back buttons and disclosure indicators that are not tinted explicitly inherit this.
+		navController.view.tintColor = AppTheme.Colors.controlTinted
 		view.addSubview(navController.view)
 	}
 
